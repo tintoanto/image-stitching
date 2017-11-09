@@ -10,10 +10,10 @@ function main()
 %     developed as part of HW 2.
 
     r= {}; c= {};
-    for i = 1:num
-        [~, ri, ci] = harris(IMatrix(:,:,i), 2, 0.1, 2, 0);
-        r(i) = {ri};
-        c(i) = {ci};
+    for idx = 1:num
+        [~, ridx, cidx] = harris(IMatrix(:,:,idx), 2, 0.1, 2, 0);   % IMatrix(:,:,idx) denotes 'idx'th image matrix
+        I(idx) = {ridx};    % I(idx) is vector denotes the I coordinates features of matrix idx
+        J(idx) = {cidx};    % J(idx) is vector  denotes the J coordinates features of matrix idx
     end
     
 % Getting the neighborhoods
@@ -23,10 +23,12 @@ function main()
 %     neighborhood sizes to see which one works the best. If you’re using your 
 %     Laplacian detector, use the detected feature scales to define the 
 %     neighborhood scales.
-    n= {};
+    n= {};newI={};newJ={};
     for i = 1:num
-        ni = neighborhoods(IMatrix(:,:,i), r{i}, c{i}, nsize);
-        n(i)={ni};
+        [ni newIi newJi] = neighborhoods(IMatrix(:,:,i), I{i}, J{i}, nsize);
+        newI(i) = {newIi};    % newI(i) is reduced I(i)
+        newJ(i) = {newJi};    % newJ(i) is reduced J(i)
+        n(i)    = {ni};      %  n(i) denotes the i'th features neighbourhood
     end
     
 % Get distances
@@ -38,7 +40,7 @@ function main()
 %     free to experiment with SIFT descriptors. The script find sift.m that we 
 %     provide contains some basic code for computing SIFT descriptors of
 %     circular regions, such as the ones returned by the detector from HW 2.
-    d = dist2(n{1},n{2});
+    d = dist2(n{1},n{2});   
     disp(size(d))
 
 % Select the matches
@@ -46,12 +48,33 @@ function main()
 %     distances obtained above. You can select all pairs whose descriptor 
 %     distances are below a specified threshold, or select the top few hundred
 %     descriptor pairs with the smallest pairwise distances.
-    [M, dJ] = min(d,[],2);
-    [B,oriDJ] = sort(M);
+    [M, fulldJ] = min(d,[],2);
+    [B, fulldI] = sort(M);
+    dI          = fulldI(1:200);
+    dJ          = fulldJ(dI);
+    
+    imshow([IMatrix(:,:,1) IMatrix(:,:,2)]); hold on;
+    
+    pm          = {};                                              % pm = putative matches
+    pm(1)       = { [ newJ{1}(dI) newI{1}(dI) ] };
+    pm(2)       = { [ newJ{2}(dJ) newI{2}(dJ) ] };
+    x_offset    = size(IMatrix(:,:,1),2);
+    
+    scatter(    pm{1}(:,1),             pm{1}(:,2))
+    scatter(    pm{2}(:,1)+x_offset,    pm{2}(:,2))
+    
+    line(   [   pm{1}(:,1) pm{2}(:,1)+x_offset]', ...
+            [   pm{1}(:,2) pm{2}(:,2)]', ...
+                    'Color', 'r');
     
     
-
-
+    
+% Run RANSAC
+% Q6. Run RANSAC to estimate a homography mapping one image onto the other. Report the number of
+%     inliers and the average residual for the inliers (squared distance between the point coordinates in one
+%     image and the transformed coordinates of the matching point in the other image). Also, display the
+%     locations of inlier matches in both images.
+    
 
 
 
