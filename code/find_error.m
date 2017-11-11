@@ -27,6 +27,7 @@ function [ total_error, inlier_error, inliers, inlier_count ] = find_error(pm, p
             inlier_count    =   inlier_count + 1;
         end
     end
-%     disp(inlier_count);
+    
+%   disp(inlier_count);
     
     
