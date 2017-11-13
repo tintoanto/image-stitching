@@ -1,4 +1,4 @@
-function filesGrayScaleMatrix = preprocess(index)
+function [ filesGrayScaleMatrix img1 img2 ] = preprocess(index)
 %  Q1. Load both images, convert to double and to grayscale.
     if nargin < 1
         index = 4;
@@ -24,6 +24,12 @@ function filesGrayScaleMatrix = preprocess(index)
         I       = im2double(gray_I);
 
         filesGrayScaleMatrix = cat (3,filesGrayScaleMatrix,I);
+        
+        if(i==1)
+            img1=ori_I;
+        elseif(i==2)
+            img2=ori_I;
+        end
     end
     
     
