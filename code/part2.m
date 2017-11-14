@@ -3,9 +3,9 @@ function part2()
     %% load images and match files for the first example
     %%
     img_root = '../data/part2/';
-    I1 = imread(strcat(img_root,'library1.jpg'));
-    I2 = imread(strcat(img_root,'library2.jpg'));
-    matches = load(strcat(img_root,'library_matches.txt')); 
+    I1 = imread(strcat(img_root,'house1.jpg'));
+    I2 = imread(strcat(img_root,'house2.jpg'));
+    matches = load(strcat(img_root,'house_matches.txt')); 
     % this is a N x 4 file where the first two numbers of each row
     % are coordinates of corners in the first image and the last two
     % are coordinates of corresponding corners in the second image: 
@@ -86,3 +86,60 @@ function part2()
     plot(matches(:,3), matches(:,4), '+r');
     line([matches(:,3) closest_pt(:,1)]', [matches(:,4) closest_pt(:,2)]', 'Color', 'r');
     line([pt1(:,1) pt2(:,1)]', [pt1(:,2) pt2(:,2)]', 'Color', 'g');
+    
+    
+    %% Load Matrix Camera and find Camera centers
+    P1 = load(strcat(img_root,'house1_camera.txt'));
+    P2 = load(strcat(img_root,'house2_camera.txt'));
+    [~, ~, V] = svd(P1);
+    cc1 = V(:,end);
+    cc1 = cc1/cc1(4);
+    cc1 = cc1(1:3);
+    [~, ~, V] = svd(P2);
+    cc2 = V(:,end);
+    cc2 = cc2/cc2(4);
+    cc2 = cc2(1:3);
+    
+    %% Triangulation
+    for i = 1:size(matches,1)
+        pt1 = matches(i,[1,2]);
+        pt2 = matches(i,[3,4]);
+        crossProductMat1 = [  0   -1  pt1(2); 1   0   -pt1(1); -pt1(2)  pt1(1)   0  ];
+        crossProductMat2 = [  0   -1  pt2(2); 1   0   -pt2(1); -pt2(2)  pt2(1)   0  ];    
+        Eqns = [ crossProductMat1*P1; crossProductMat2*P2 ];
+
+        [~,~,V] = svd(Eqns);
+        cal3D_homo = V(:,end)';
+        cal3D_homo  = cal3D_homo/cal3D_homo(4);
+        cal3D_cart(i,:) = cal3D_homo(1:3);
+
+        projP1 = (P1 * cal3D_homo')';
+        projP1 = projP1/projP1(3);
+        projP1_cart(i,:) = projP1(1:2);
+        projP2 = (P2 * cal3D_homo')';
+        projP2 = projP2/projP2(3);
+        projP2_cart(i,:) = projP2(1:2);
+    end
+
+    %% Residual Calculation
+    res1_mat = pdist2(matches(:,1:2),projP1_cart);
+    res1 = trace(res1_mat.^2);
+    res1 = res1/size(res1_mat,1);
+    fprintf("\n Residual Image 1 : "+ res1 );
+    res2_mat = pdist2(matches(:,3:4),projP2_cart);
+    res2 = trace(res2_mat.^2);
+    res2 = res2/size(res1_mat,1);
+    fprintf("\n Residual Image 2 : "+res2 );
+
+    %% Plotting
+    figure; axis equal;  hold on; 
+    view(3);
+    plot3(-cal3D_cart(:,1), cal3D_cart(:,2), cal3D_cart(:,3), '.r');
+    plot3(-cc1(1), cc1(2), cc1(3),'*g');
+    plot3(-cc2(1), cc2(2), cc2(3),'*b');
+    grid on; xlabel('x'); ylabel('y'); zlabel('z'); axis equal;
+    
+
+
+
+    
